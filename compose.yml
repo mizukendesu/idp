@@ -1,0 +1,50 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: ../infrastructure/backend/docker/Dockerfile.development
+      args:
+        USER_ID: ${UID}
+        GROUP_ID: ${GID}
+    environment:
+      DATABASE_URL: postgres://user:password@db:5432/idp
+    volumes:
+      - ./backend:/app/backend
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: ../infrastructure/frontend/docker/Dockerfile.development
+    volumes:
+      - ./frontend:/app/frontend
+    ports:
+      - "3000:3000"
+
+  db:
+    image: postgres:16
+    build:
+      context: ./infrastructure/db
+      dockerfile: ./docker/Dockerfile
+    environment:
+      POSTGRES_DB: idp
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+  nginx:
+    build:
+      context: ./infrastructure/nginx
+      dockerfile: ./docker/Dockerfile.development
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+      - frontend
+
+volumes:
+  db-data:
